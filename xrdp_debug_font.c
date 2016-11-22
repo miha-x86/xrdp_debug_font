@@ -148,7 +148,7 @@ static int read_glyph(int fd, char stop) {
     while (i < glyph_size) {
 
         if ((roller % _w) == 0)
-            printf("\n\t");
+            printf("\n\t%i: ", i+1);
 
         printf("%c", (buffer[i] & (0x80 >> (roller & 7))) ? '1' : '0');
 
