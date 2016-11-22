@@ -144,11 +144,12 @@ static int read_glyph(int fd, char stop) {
     int _w = (w + 7) & ~7;
     int roller = 0;
     int i = 0;
+    int j = 1;
 
     while (i < glyph_size) {
 
         if ((roller % _w) == 0)
-            printf("\n\t%*i: ", 2, i+1);
+            printf("\n\t%*i: ", 2, j++);
 
         printf("%c", (buffer[i] & (0x80 >> (roller & 7))) ? '1' : '0');
 
@@ -159,10 +160,10 @@ static int read_glyph(int fd, char stop) {
     }
     printf("\n\n");
 
-    if (index == stop && stop) {
-        printf("%c", stop);
+    /* Stop char reached */
+    if (index == stop && stop)
         return -2;
-    }
+
     index++;
 
     return r;
@@ -203,6 +204,22 @@ int main(int argc, char** argv) {
         printf("Usage: %s <fontfile> [stop char]\n", argv[0]);
         return 1;
     }
+
+#if 0
+    if (!strcmp(argv[1], "--dump-ascii-charset")) {
+        int i;
+
+        printf("charset = \"");
+        for (i=32; i<256; i++) {
+            if (i == 127)
+                continue;
+            printf("%c", i);
+        }
+        printf("\";\n");
+
+        return 0;
+    }
+#endif
 
     int fd = open(argv[1], O_RDONLY);
     if (fd == -1) {
