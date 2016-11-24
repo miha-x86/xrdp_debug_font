@@ -42,7 +42,7 @@ static int check_header(int fd) {
 
 static int read_glyph(int fd, char stop) {
 
-    unsigned char buffer[128];
+    unsigned char buffer[512];
     short w, h;
     int r;
     static int index = 32;
