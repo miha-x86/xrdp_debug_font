@@ -50,6 +50,16 @@ typedef struct __attribute__((__packed__)) {
     }                                                                   \
     }
 
+/**
+ * @brief fdread
+ *
+ * Generic reading routine
+ *
+ * @param fd fd
+ * @param buffer buffer
+ * @param size size
+ * @return int
+ */
 int
 fdread(int   fd,
        void* buffer,
@@ -67,6 +77,11 @@ fdread(int   fd,
     return r;
 }
 
+/**
+ * @brief unload_font
+ *
+ * @param font font
+ */
 static void
 unload_font(xrdp_font* font)
 {
@@ -78,6 +93,15 @@ unload_font(xrdp_font* font)
     free(font);
 }
 
+/**
+ * @brief load_glyphs
+ *
+ * Loads glyph information from fv1 font file
+ *
+ * @param fd fd
+ * @param font font
+ * @return int
+ */
 static int
 load_glyphs(int        fd,
             xrdp_font* font)
@@ -106,6 +130,14 @@ load_glyphs(int        fd,
     return 0;
 }
 
+/**
+ * @brief load_font
+ *
+ * Loads a xrdp fv1 file
+ *
+ * @param filename filename
+ * @return xrdp_font
+ */
 static xrdp_font*
 load_font(const char* filename)
 {
@@ -144,16 +176,34 @@ load_font(const char* filename)
     return font;
 }
 
-
+/**
+ * @brief print_glyph
+ *
+ * Prints glyph information
+ *
+ * @param glyph glyph
+ */
 static void
 print_glyph(xrdp_glyph* glyph)
 {
     int  w, h, x, y, i;
     byte b, *data;
 
+    printf("Glyph information:\n"
+           "width: %-3i\n"
+           "height: %-3i\n"
+           "baseline: %-3i\n"
+           "offset: %-3i\n"
+           "incby: %-3i\n"
+           "data:\n",
+           glyph->width, glyph->height, glyph->baseline,
+           glyph->offset, glyph->incby);
+
     w = (glyph->width + 7) & ~7;
     h = (glyph->height + 3) & ~3;
     data = glyph->data;
+    if (!data)
+        return;
 
     for (y = 0; y < h; y++) {
         b = *data++;
@@ -170,14 +220,50 @@ print_glyph(xrdp_glyph* glyph)
     }
 }
 
+/**
+ * @brief print_copies
+ *
+ * Print any other glyph that has the exactly same data
+ *
+ * @param glypha glypha
+ * @param glyph glyph
+ */
+static void
+print_copies(xrdp_glyph* glypha,
+             xrdp_glyph* glyph)
+{
+    int i;
+    xrdp_glyph* g;
+
+    for (i = 0; i < 0x4e00 - 32; i++) {
+        g = glypha + i;
+
+        if (g == glyph || g->size != glyph->size
+            || g->width != glyph->width || g->height != glyph->height)
+            continue;
+
+        if (!memcmp(g->data, glyph->data, glyph->size))
+            print_glyph(g);
+    }
+}
+
+/**
+ * @brief main
+ *
+ * @param argc argc
+ * @param argv argv
+ * @return int
+ */
 int
 main(int    argc,
      char** argv)
 {
-    xrdp_font* font;
+    xrdp_font*  font;
+    xrdp_glyph* glyph;
+    int         i;
 
     if (argc < 2) {
-        printf("Usage: %s <fontfile> [stop char]\n", argv[0]);
+        printf("Usage: %s <fontfile> [glyph]\n", argv[0]);
         return 1;
     }
 
@@ -187,8 +273,15 @@ main(int    argc,
         return 1;
     printf("OK\n");
 
+    /* Print glyph */
+    if (argc > 2) {
+        i = (unsigned char)argv[2][0];
+        printf("ASCII code: %i\n", i);
+        print_glyph(&font->glyphs[i - 32]);
+        print_copies(font->glyphs, &font->glyphs[i - 32]);
+    }
+
     unload_font(font);
 
     return 0;
-
 }
