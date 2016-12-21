@@ -39,15 +39,26 @@ typedef struct __attribute__((__packed__)) {
     xrdp_glyph* glyphs;
 } xrdp_font;
 
-#define READ_BYTES(fd, buffer, size) {          \
-    int r;                                      \
-    r = fdread(fd, buffer, size);               \
-    if (r == 0)                                 \
-        return 1;                               \
-    if (r == -1) {                              \
+#define READ_BYTES(fd, buffer, size) {                                  \
+    int r;                                                              \
+    r = fdread(fd, buffer, size);                                       \
+    if (r == 0)                                                         \
+        return 1;                                                       \
+    if (r == -1) {                                                      \
         printf("Error: %s:%i %s\n", __FILE__, __LINE__, strerror(errno)); \
         return 1;                                                       \
     }                                                                   \
+    }
+
+#define READ_BYTES2(fd, buffer, size) {                                 \
+        int r;                                                          \
+        r = fdread(fd, buffer, size);                                   \
+        if (r == 0)                                                     \
+            return NULL;                                                \
+        if (r == -1) {                                                  \
+            printf("Error: %s:%i %s\n", __FILE__, __LINE__, strerror(errno)); \
+            return NULL;                                                \
+        }                                                               \
     }
 
 /**
@@ -108,7 +119,7 @@ load_glyphs(int        fd,
 {
     int         i, r;
     xrdp_glyph* glyph;
-    byte        dummy[10];
+    byte        padding[6];
 
     for (i = 0; i < 0x4e00 - 32; i++) {
         glyph = font->glyphs + i;
@@ -117,7 +128,7 @@ load_glyphs(int        fd,
         READ_BYTES(fd, glyph, sizeof(xrdp_glyph) - sizeof(byte*) - sizeof(int));
 
         /* Padding */
-        READ_BYTES(fd, dummy, 6);
+        READ_BYTES(fd, padding, 6);
 
         /* Data */
         glyph->size = FONT_DATASIZE(glyph->width, glyph->height);
@@ -143,7 +154,7 @@ load_font(const char* filename)
 {
     xrdp_font* font;
     int        fd;
-    byte       dummy[10];
+    byte       padding[8];
 
     fd = open(filename, O_RDONLY);
     if (fd == -1) {
@@ -163,10 +174,10 @@ load_font(const char* filename)
     }
 
     /* Font info */
-    fdread(fd, font, sizeof(xrdp_font) - sizeof(xrdp_glyph*));
+    READ_BYTES2(fd, font, sizeof(xrdp_font) - sizeof(xrdp_glyph*));
 
     /* Padding */
-    fdread(fd, dummy, 8);
+    READ_BYTES2(fd, padding, 8);
 
     if (load_glyphs(fd, font)) {
         unload_font(font);
@@ -248,6 +259,24 @@ print_copies(xrdp_glyph* glypha,
 }
 
 /**
+ * @brief print_all_glyphs
+ *
+ * Prints all the glyphs on the glyph array
+ *
+ * @param glypha glypha
+ */
+static void
+print_all_glyphs(xrdp_glyph* glypha)
+{
+    int i;
+
+    for (i = 0; i < 0x4e00 - 32; i++) {
+        printf("index: %i\n", i + 32);
+        print_glyph(glypha + i);
+    }
+}
+
+/**
  * @brief main
  *
  * @param argc argc
@@ -263,22 +292,32 @@ main(int    argc,
     int         i;
 
     if (argc < 2) {
-        printf("Usage: %s <fontfile> [glyph]\n", argv[0]);
+        printf("Usage: %s <fontfile> [codepoint]\n", argv[0]);
         return 1;
     }
 
     printf("Loading font...\n");
     font = load_font(argv[1]);
-    if (!font)
+    if (!font) {
+        printf("Error loading font file.\n");
         return 1;
+    }
     printf("OK\n");
 
     /* Print glyph */
     if (argc > 2) {
-        i = (unsigned char)argv[2][0];
-        printf("ASCII code: %i\n", i);
+        i = atoi(argv[2]);
+        if (i < 32 || i >= 0x4e00) {
+            printf("Invalid codepoint.\n");
+            unload_font(font);
+            return 1;
+        }
+
+        printf("Codepoint: %i\n", i);
         print_glyph(&font->glyphs[i - 32]);
-        print_copies(font->glyphs, &font->glyphs[i - 32]);
+    }
+    else {
+        print_all_glyphs(font->glyphs);
     }
 
     unload_font(font);
