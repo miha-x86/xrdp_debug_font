@@ -1,14 +1,16 @@
-#include <sys/types.h>
-#include <sys/stat.h>
+/**
+ *   \file xrdp_debug_font.c
+ *   \brief Debug xrdp fv1 fonts
+ *
+ *  Simple tool for debugging xrdp fv1 fonts.
+ *
+ */
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <tesseract/capi.h>
-#include <leptonica/allheaders.h>
 #include <errno.h>
 
 #define FONT_DATASIZE(_w, _h) (((_h * ((_w + 7) / 8)) + 3) & ~3)
@@ -117,7 +119,7 @@ static int
 load_glyphs(int        fd,
             xrdp_font* font)
 {
-    int         i, r;
+    int         i;
     xrdp_glyph* glyph;
     byte        padding[6];
 
@@ -231,6 +233,7 @@ print_glyph(xrdp_glyph* glyph)
     }
 }
 
+#if 0
 /**
  * @brief print_copies
  *
@@ -257,6 +260,7 @@ print_copies(xrdp_glyph* glypha,
             print_glyph(g);
     }
 }
+#endif
 
 /**
  * @brief print_all_glyphs
@@ -288,7 +292,6 @@ main(int    argc,
      char** argv)
 {
     xrdp_font*  font;
-    xrdp_glyph* glyph;
     int         i;
 
     if (argc < 2) {
