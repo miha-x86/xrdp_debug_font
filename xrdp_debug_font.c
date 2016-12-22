@@ -218,9 +218,23 @@ print_glyph(xrdp_glyph* glyph)
     if (!data)
         return;
 
-    for (y = 0; y < h; y++) {
-        b = *data++;
+    /* Print ruler */
+    printf("    ");
+    for (x = 0; x < w;) {
+        for (i = 1; i < 9; i++, x++) {
+            printf("%i", i);
+        }
+    }
+    printf("\n    ");
+    for (x = 0; x < w; x++)
+        putchar('-');
+    printf("\n");
+
+    /* Print glyph */
+    for (y = 1; y < h+1; y++) {
+        printf("%2i: ", y);
         for (x = 0; x < w;) {
+            b = *data++;
             for (i = 0; i < 8 && x < w; i++, x++) {
                 if (b & 0x80)
                     putchar('1');
@@ -273,9 +287,14 @@ static void
 print_all_glyphs(xrdp_glyph* glypha)
 {
     int i;
+    xrdp_glyph* glyph;
 
     for (i = 0; i < 0x4e00 - 32; i++) {
-        printf("index: %i\n", i + 32);
+        glyph = glypha + i;
+        if (glyph->width <= 1)
+            continue;
+
+        printf("Index: %i\n", i + 32);
         print_glyph(glypha + i);
     }
 }
@@ -291,8 +310,8 @@ int
 main(int    argc,
      char** argv)
 {
-    xrdp_font*  font;
-    int         i;
+    xrdp_font* font;
+    int        i;
 
     if (argc < 2) {
         printf("Usage: %s <fontfile> [codepoint]\n", argv[0]);
@@ -309,9 +328,9 @@ main(int    argc,
 
     /* Print glyph */
     if (argc > 2) {
-        i = atoi(argv[2]);
+        i = (byte) argv[2][0];
         if (i < 32 || i >= 0x4e00) {
-            printf("Invalid codepoint.\n");
+            printf("Invalid character %i.\n", i);
             unload_font(font);
             return 1;
         }
