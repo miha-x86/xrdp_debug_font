@@ -129,6 +129,9 @@ load_glyphs(int        fd,
         /* Glyph info */
         READ_BYTES(fd, glyph, sizeof(xrdp_glyph) - sizeof(byte*) - sizeof(int));
 
+        if (!glyph->width || !glyph->height)
+            printf("Warning: Invalid glyph detected at index %i.\n", i + 32);
+
         /* Padding */
         READ_BYTES(fd, padding, 6);
 
