@@ -1,3 +1,4 @@
+// -*- compile-command: "gcc xrdp_debug_font.c -o xrdp_debug_font -Wall -Wextra -Werror" -*-
 /**
  *   \file xrdp_debug_font.c
  *   \brief Debug xrdp fv1 fonts
